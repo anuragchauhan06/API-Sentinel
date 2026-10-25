@@ -13,3 +13,13 @@ describe("GET /health", () => {
     expect(response.body.timestamp).toBeDefined();
   });
 });
+
+describe("404 Not Found", () => {
+  it("should return 404 for an unknown route", async () => {
+    const response = await request(app).get("/unknown-route");
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Route not found");
+  });
+});
