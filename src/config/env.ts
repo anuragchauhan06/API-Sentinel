@@ -9,6 +9,7 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
 });
 
 const result = envSchema.safeParse(process.env);
