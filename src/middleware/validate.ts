@@ -22,6 +22,13 @@ export const validate = (schema: ZodType): RequestHandler => {
       return;
     }
 
+    // Use the validated and parsed request body.
+    const parsedData = result.data as { body?: unknown };
+
+    if (parsedData.body !== undefined) {
+      req.body = parsedData.body;
+    }
+
     next();
   };
 };
