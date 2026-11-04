@@ -20,14 +20,12 @@ describe("Monitor Model", () => {
   it("should require name and url", async () => {
     const monitor = new Monitor({});
 
-    const error = await monitor.validate().then(
-      () => null,
-      (validationError) => validationError
-    );
-
-    expect(error).toBeDefined();
-    expect(error?.errors.name).toBeDefined();
-    expect(error?.errors.url).toBeDefined();
+    await expect(monitor.validate()).rejects.toMatchObject({
+      errors: {
+        name: expect.anything(),
+        url: expect.anything(),
+      },
+    });
   });
 
   it("should reject an invalid HTTP method", async () => {
@@ -37,12 +35,11 @@ describe("Monitor Model", () => {
       method: "INVALID",
     });
 
-    const error = await monitor.validate().then(
-      () => null,
-      (validationError) => validationError
-    );
-
-    expect(error?.errors.method).toBeDefined();
+    await expect(monitor.validate()).rejects.toMatchObject({
+      errors: {
+        method: expect.anything(),
+      },
+    });
   });
 
   it("should reject an interval below 30 seconds", async () => {
@@ -52,11 +49,10 @@ describe("Monitor Model", () => {
       intervalSeconds: 10,
     });
 
-    const error = await monitor.validate().then(
-      () => null,
-      (validationError) => validationError
-    );
-
-    expect(error?.errors.intervalSeconds).toBeDefined();
+    await expect(monitor.validate()).rejects.toMatchObject({
+      errors: {
+        intervalSeconds: expect.anything(),
+      },
+    });
   });
 });
