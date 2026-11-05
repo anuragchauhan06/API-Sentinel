@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../src/app";
@@ -8,6 +9,7 @@ vi.mock("../src/models/Monitor", () => ({
     create: vi.fn(),
     find: vi.fn(),
     countDocuments: vi.fn(),
+    findById: vi.fn(),
   },
 }));
 
@@ -145,5 +147,52 @@ describe("Monitor API", () => {
     expect(response.status).toBe(400);
     expect(response.body.success).toBe(false);
     expect(Monitor.find).not.toHaveBeenCalled();
+  });
+
+  it("should return a monitor by ID", async () => {
+    const mockMonitor = {
+      _id: "507f1f77bcf86cd799439011",
+      name: "Payment API",
+      url: "https://example.com/payments",
+      status: "unknown",
+    };
+
+    vi.mocked(Monitor.findById).mockResolvedValue(mockMonitor as never);
+
+    const response = await request(app).get(
+      "/api/v1/monitors/507f1f77bcf86cd799439011"
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.name).toBe("Payment API");
+
+    expect(Monitor.findById).toHaveBeenCalledWith(
+      "507f1f77bcf86cd799439011"
+    );
+  });
+
+  it("should reject an invalid monitor ID", async () => {
+    const response = await request(app).get(
+      "/api/v1/monitors/invalid-id"
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Invalid monitor ID");
+
+    expect(Monitor.findById).not.toHaveBeenCalled();
+  });
+
+  it("should return 404 when monitor does not exist", async () => {
+    vi.mocked(Monitor.findById).mockResolvedValue(null);
+
+    const response = await request(app).get(
+      "/api/v1/monitors/507f1f77bcf86cd799439011"
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Monitor not found");
   });
 });

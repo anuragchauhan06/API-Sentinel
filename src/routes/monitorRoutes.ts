@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import { z } from "zod";
 import Monitor from "../models/Monitor";
@@ -67,6 +68,39 @@ router.get("/", async (req, res, next) => {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/monitors/:id
+router.get("/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Validate MongoDB ObjectId format
+    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid monitor ID",
+      });
+      return;
+    }
+
+    const monitor = await Monitor.findById(id);
+
+    if (!monitor) {
+      res.status(404).json({
+        success: false,
+        message: "Monitor not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: monitor,
     });
   } catch (error) {
     next(error);
