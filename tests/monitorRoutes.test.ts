@@ -10,6 +10,7 @@ vi.mock("../src/models/Monitor", () => ({
     find: vi.fn(),
     countDocuments: vi.fn(),
     findById: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
   },
 }));
 
@@ -195,4 +196,77 @@ describe("Monitor API", () => {
     expect(response.body.success).toBe(false);
     expect(response.body.message).toBe("Monitor not found");
   });
+  
+it("should update a monitor successfully", async () => {
+  const updatedMonitor = {
+    _id: "507f1f77bcf86cd799439011",
+    name: "Updated Payment API",
+    url: "https://example.com/payments",
+    intervalSeconds: 600,
+  };
+
+  vi.mocked(Monitor.findByIdAndUpdate).mockResolvedValue(
+    updatedMonitor as never
+  );
+
+  const response = await request(app)
+    .patch("/api/v1/monitors/507f1f77bcf86cd799439011")
+    .send({
+      name: "Updated Payment API",
+      intervalSeconds: 600,
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body.success).toBe(true);
+  expect(response.body.message).toBe("Monitor updated successfully");
+  expect(response.body.data.name).toBe("Updated Payment API");
+
+  expect(Monitor.findByIdAndUpdate).toHaveBeenCalledWith(
+    "507f1f77bcf86cd799439011",
+    {
+      $set: {
+        name: "Updated Payment API",
+        intervalSeconds: 600,
+      },
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+});
+
+it("should reject an invalid monitor ID during update", async () => {
+  const response = await request(app)
+    .patch("/api/v1/monitors/invalid-id")
+    .send({
+      name: "Updated API",
+    });
+
+  expect(response.status).toBe(400);
+  expect(response.body.message).toBe("Invalid monitor ID");
+  expect(Monitor.findByIdAndUpdate).not.toHaveBeenCalled();
+});
+
+it("should return 404 when updating a non-existent monitor", async () => {
+  vi.mocked(Monitor.findByIdAndUpdate).mockResolvedValue(null);
+
+  const response = await request(app)
+    .patch("/api/v1/monitors/507f1f77bcf86cd799439011")
+    .send({
+      name: "Updated API",
+    });
+
+  expect(response.status).toBe(404);
+  expect(response.body.message).toBe("Monitor not found");
+});
+
+it("should reject an empty update request", async () => {
+  const response = await request(app)
+    .patch("/api/v1/monitors/507f1f77bcf86cd799439011")
+    .send({});
+
+  expect(response.status).toBe(400);
+  expect(Monitor.findByIdAndUpdate).not.toHaveBeenCalled();
+});
 });

@@ -3,7 +3,10 @@ import { Router } from "express";
 import { z } from "zod";
 import Monitor from "../models/Monitor";
 import { validate } from "../middleware/validate";
-import { createMonitorSchema } from "../validators/monitorSchema";
+import {
+  createMonitorSchema,
+  updateMonitorSchema,
+} from "../validators/monitorSchema";
 
 const router = Router();
 
@@ -11,6 +14,9 @@ const listMonitorsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
 });
+
+const isValidObjectId = (id: string): boolean =>
+  /^[0-9a-fA-F]{24}$/.test(id);
 
 // POST /api/v1/monitors
 router.post(
@@ -77,16 +83,15 @@ router.get("/", async (req, res, next) => {
 // GET /api/v1/monitors/:id
 router.get("/:id", async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
 
-    // Validate MongoDB ObjectId format
-    if (!/^[0-9a-fA-F]{24}$/.test(id)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid monitor ID",
-      });
-      return;
-    }
+if (typeof id !== "string" || !isValidObjectId(id)) {
+  res.status(400).json({
+    success: false,
+    message: "Invalid monitor ID",
+  });
+  return;
+}
 
     const monitor = await Monitor.findById(id);
 
@@ -106,5 +111,48 @@ router.get("/:id", async (req, res, next) => {
     next(error);
   }
 });
+
+// PATCH /api/v1/monitors/:id
+router.patch(
+  "/:id",
+  validate(updateMonitorSchema),
+  async (req, res, next) => {
+    try {
+      const id = req.params.id;
+
+if (typeof id !== "string" || !isValidObjectId(id)) {
+  res.status(400).json({
+    success: false,
+    message: "Invalid monitor ID",
+  });
+  return;
+}
+    const monitor = await Monitor.findByIdAndUpdate(
+        id,
+        { $set: req.body },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      if (!monitor) {
+        res.status(404).json({
+          success: false,
+          message: "Monitor not found",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Monitor updated successfully",
+        data: monitor,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

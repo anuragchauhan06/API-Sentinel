@@ -42,3 +42,13 @@ const monitorBodySchema = z.object({
 export const createMonitorSchema = z.object({
   body: monitorBodySchema,
 });
+
+// All fields are optional for partial updates.
+export const updateMonitorSchema = z.object({
+  body: monitorBodySchema.partial().refine(
+    (data) => Object.keys(data).length > 0,
+    {
+      message: "At least one field must be provided",
+    }
+  ),
+});
