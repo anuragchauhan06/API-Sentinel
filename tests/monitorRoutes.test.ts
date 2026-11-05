@@ -11,6 +11,7 @@ vi.mock("../src/models/Monitor", () => ({
     countDocuments: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    findByIdAndDelete: vi.fn(),
   },
 }));
 
@@ -269,4 +270,53 @@ it("should reject an empty update request", async () => {
   expect(response.status).toBe(400);
   expect(Monitor.findByIdAndUpdate).not.toHaveBeenCalled();
 });
+
+it("should delete a monitor successfully", async () => {
+  const deletedMonitor = {
+    _id: "507f1f77bcf86cd799439011",
+    name: "Payment API",
+    url: "https://example.com/payments",
+  };
+
+  vi.mocked(Monitor.findByIdAndDelete).mockResolvedValue(
+    deletedMonitor as never
+  );
+
+  const response = await request(app).delete(
+    "/api/v1/monitors/507f1f77bcf86cd799439011"
+  );
+
+  expect(response.status).toBe(200);
+  expect(response.body.success).toBe(true);
+  expect(response.body.message).toBe("Monitor deleted successfully");
+
+  expect(Monitor.findByIdAndDelete).toHaveBeenCalledWith(
+    "507f1f77bcf86cd799439011"
+  );
+});
+
+it("should reject an invalid monitor ID during deletion", async () => {
+  const response = await request(app).delete(
+    "/api/v1/monitors/invalid-id"
+  );
+
+  expect(response.status).toBe(400);
+  expect(response.body.success).toBe(false);
+  expect(response.body.message).toBe("Invalid monitor ID");
+
+  expect(Monitor.findByIdAndDelete).not.toHaveBeenCalled();
+});
+
+it("should return 404 when deleting a non-existent monitor", async () => {
+  vi.mocked(Monitor.findByIdAndDelete).mockResolvedValue(null);
+
+  const response = await request(app).delete(
+    "/api/v1/monitors/507f1f77bcf86cd799439011"
+  );
+
+  expect(response.status).toBe(404);
+  expect(response.body.success).toBe(false);
+  expect(response.body.message).toBe("Monitor not found");
+});
+
 });

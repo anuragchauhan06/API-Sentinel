@@ -155,4 +155,36 @@ if (typeof id !== "string" || !isValidObjectId(id)) {
   }
 );
 
+// DELETE /api/v1/monitors/:id
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    if (typeof id !== "string" || !isValidObjectId(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid monitor ID",
+      });
+      return;
+    }
+
+    const monitor = await Monitor.findByIdAndDelete(id);
+
+    if (!monitor) {
+      res.status(404).json({
+        success: false,
+        message: "Monitor not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Monitor deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
